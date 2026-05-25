@@ -21,6 +21,12 @@ const getHeaders = (requireAuth = false) => {
 const handleResponse = async (res) => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 401) {
+      // Auto-logout jika token expired / tidak valid
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_data");
+      window.location.href = "/";
+    }
     const errorMsg = data.message || data.error_description || data.error || "Terjadi kesalahan pada server";
     throw new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
   }

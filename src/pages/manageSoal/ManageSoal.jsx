@@ -41,7 +41,10 @@ export function ManageSoal() {
   const [editingSoal, setEditingSoal] = useState(null);
   
   const [form, setForm] = useState({
-    pertanyaan: "", opsiA: "", opsiB: "", opsiC: "", opsiD: "", opsiE: "", jawaban: "A", pembahasan: "", mapel: "TPS", tingkat: "mudah"
+    tipeSoal: "Pilihan Ganda Sederhana",
+    pertanyaan: "", opsiA: "", opsiB: "", opsiC: "", opsiD: "", opsiE: "", jawaban: "A",
+    pernyataanList: [{ text: "", kunci: "Benar" }, { text: "", kunci: "Salah" }],
+    pembahasan: "", mapel: "TPS", tingkat: "mudah"
   });
   
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -79,9 +82,11 @@ export function ManageSoal() {
   const handleEdit = (soal) => {
     setEditingSoal(soal);
     setForm({
+      tipeSoal: soal.opsi?.tipeSoal || "Pilihan Ganda Sederhana",
       pertanyaan: soal.pertanyaan,
-      opsiA: soal.opsi.A, opsiB: soal.opsi.B, opsiC: soal.opsi.C, opsiD: soal.opsi.D, opsiE: soal.opsi.E,
-      jawaban: "A", // Jawaban asli tidak dikirim backend, admin harus re-select
+      opsiA: soal.opsi?.A || "", opsiB: soal.opsi?.B || "", opsiC: soal.opsi?.C || "", opsiD: soal.opsi?.D || "", opsiE: soal.opsi?.E || "",
+      jawaban: "A",
+      pernyataanList: soal.opsi?.pernyataanList || [{ text: "", kunci: "Benar" }, { text: "", kunci: "Salah" }],
       pembahasan: soal.pembahasan,
       mapel: soal.mapel,
       tingkat: soal.tingkat
@@ -91,17 +96,34 @@ export function ManageSoal() {
 
   const handleAdd = () => {
     setEditingSoal(null);
-    setForm({ pertanyaan: "", opsiA: "", opsiB: "", opsiC: "", opsiD: "", opsiE: "", jawaban: "A", pembahasan: "", mapel: "TPS", tingkat: "mudah" });
+    setForm({ 
+      tipeSoal: "Pilihan Ganda Sederhana",
+      pertanyaan: "", opsiA: "", opsiB: "", opsiC: "", opsiD: "", opsiE: "", jawaban: "A",
+      pernyataanList: [{ text: "", kunci: "Benar" }, { text: "", kunci: "Salah" }],
+      pembahasan: "", mapel: "TPS", tingkat: "mudah" 
+    });
     setShowModal(true);
   };
 
   const saveSoal = async (e) => {
     e.preventDefault();
     setActionLoading(true);
+    let payloadOpsi = {};
+    let payloadJawaban = form.jawaban;
+
+    if (form.tipeSoal === "Pilihan Ganda Sederhana" || form.tipeSoal === "Pilihan Ganda Majemuk") {
+      payloadOpsi = { A: form.opsiA, B: form.opsiB, C: form.opsiC, D: form.opsiD, E: form.opsiE, tipeSoal: form.tipeSoal };
+    } else if (form.tipeSoal === "Benar/Salah (True/False)") {
+      payloadOpsi = { tipeSoal: form.tipeSoal, pernyataanList: form.pernyataanList };
+      payloadJawaban = JSON.stringify(form.pernyataanList.map(p => p.kunci));
+    } else if (form.tipeSoal === "Isian Singkat") {
+      payloadOpsi = { tipeSoal: form.tipeSoal };
+    }
+
     const payload = {
       pertanyaan: form.pertanyaan,
-      opsi: { A: form.opsiA, B: form.opsiB, C: form.opsiC, D: form.opsiD, E: form.opsiE },
-      jawaban: form.jawaban,
+      opsi: payloadOpsi,
+      jawaban: payloadJawaban,
       pembahasan: form.pembahasan,
       mapel: form.mapel,
       tingkat: form.tingkat
@@ -192,19 +214,109 @@ export function ManageSoal() {
                   <CustomSelect value={form.tingkat} onChange={v => setForm({...form, tingkat: v})} options={["mudah", "sedang", "sulit"]} />
                 </div>
               </div>
-              <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Pertanyaan</label><textarea required value={form.pertanyaan} onChange={e => setForm({...form, pertanyaan: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary min-h-[80px]" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi A</label><input required value={form.opsiA} onChange={e => setForm({...form, opsiA: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
-                <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi B</label><input required value={form.opsiB} onChange={e => setForm({...form, opsiB: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
-                <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi C</label><input required value={form.opsiC} onChange={e => setForm({...form, opsiC: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
-                <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi D</label><input required value={form.opsiD} onChange={e => setForm({...form, opsiD: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
-                <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi E</label><input required value={form.opsiE} onChange={e => setForm({...form, opsiE: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
-                <div>
-                  <label className="block text-[11px] font-bold text-muted uppercase mb-2">Jawaban Benar</label>
-                  <CustomSelect value={form.jawaban} onChange={v => setForm({...form, jawaban: v})} options={["A", "B", "C", "D", "E"]} />
-                  {editingSoal && <p className="text-[10px] text-danger mt-1">Isi ulang (API tidak mengembalikan kunci).</p>}
-                </div>
+              
+              <div>
+                <label className="block text-[11px] font-bold text-muted uppercase mb-2">Tipe Soal</label>
+                <CustomSelect 
+                  value={form.tipeSoal} 
+                  onChange={v => setForm({...form, tipeSoal: v})} 
+                  options={["Pilihan Ganda Sederhana", "Pilihan Ganda Majemuk", "Benar/Salah (True/False)", "Isian Singkat"]} 
+                />
               </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-muted uppercase mb-2">Pertanyaan</label>
+                <textarea required value={form.pertanyaan} onChange={e => setForm({...form, pertanyaan: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary min-h-[80px]" />
+              </div>
+
+              {form.tipeSoal === "Benar/Salah (True/False)" && (
+                <div className="space-y-6 bg-surface-hover/30 p-4 rounded-xl border-2 border-border/50">
+                  <div>
+                    <label className="block text-[11px] font-bold text-text uppercase mb-3">Daftar Pernyataan</label>
+                    <div className="space-y-3">
+                      {form.pernyataanList.map((p, idx) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <input 
+                            required 
+                            placeholder={`Pernyataan ${idx + 1}`}
+                            value={p.text} 
+                            onChange={e => {
+                              const newList = [...form.pernyataanList];
+                              newList[idx].text = e.target.value;
+                              setForm({...form, pernyataanList: newList});
+                            }} 
+                            className="flex-1 bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" 
+                          />
+                          <button type="button" onClick={() => {
+                            if (form.pernyataanList.length <= 1) return;
+                            const newList = form.pernyataanList.filter((_, i) => i !== idx);
+                            setForm({...form, pernyataanList: newList});
+                          }} className="p-2 bg-danger/10 text-danger border-2 border-danger/20 hover:bg-danger hover:text-white rounded-lg transition-colors cursor-pointer">
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => {
+                        setForm({...form, pernyataanList: [...form.pernyataanList, { text: "", kunci: "Benar" }]});
+                      }} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-surface border-2 border-border hover:border-primary text-text transition-colors cursor-pointer">
+                        + Tambah Pernyataan
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-text uppercase mb-3 border-b-2 border-border pb-2 flex justify-between">
+                      <span>Pernyataan</span>
+                      <span>Kunci</span>
+                    </label>
+                    <div className="space-y-2">
+                      {form.pernyataanList.map((p, idx) => (
+                        <div key={idx} className="flex justify-between items-center gap-4 bg-surface p-2 rounded-lg border-2 border-border">
+                          <span className="text-[12px] truncate flex-1">{p.text || `Pernyataan ${idx + 1}`}</span>
+                          <select 
+                            value={p.kunci} 
+                            onChange={e => {
+                              const newList = [...form.pernyataanList];
+                              newList[idx].kunci = e.target.value;
+                              setForm({...form, pernyataanList: newList});
+                            }}
+                            className="bg-surface-hover border-2 border-border rounded-md px-2 py-1 text-[12px] font-bold outline-none cursor-pointer"
+                          >
+                            <option value="Benar">Benar</option>
+                            <option value="Salah">Salah</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(form.tipeSoal === "Pilihan Ganda Sederhana" || form.tipeSoal === "Pilihan Ganda Majemuk") && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi A</label><input required value={form.opsiA} onChange={e => setForm({...form, opsiA: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
+                  <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi B</label><input required value={form.opsiB} onChange={e => setForm({...form, opsiB: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
+                  <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi C</label><input required value={form.opsiC} onChange={e => setForm({...form, opsiC: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
+                  <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi D</label><input required value={form.opsiD} onChange={e => setForm({...form, opsiD: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
+                  <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Opsi E</label><input required value={form.opsiE} onChange={e => setForm({...form, opsiE: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" /></div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-muted uppercase mb-2">Jawaban Benar</label>
+                    {form.tipeSoal === "Pilihan Ganda Sederhana" ? (
+                      <CustomSelect value={form.jawaban} onChange={v => setForm({...form, jawaban: v})} options={["A", "B", "C", "D", "E"]} />
+                    ) : (
+                      <input required value={form.jawaban} onChange={e => setForm({...form, jawaban: e.target.value})} placeholder="Contoh: A,B,C" className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                    )}
+                    {editingSoal && <p className="text-[10px] text-danger mt-1">Isi ulang (API tidak mengembalikan kunci).</p>}
+                  </div>
+                </div>
+              )}
+
+              {form.tipeSoal === "Isian Singkat" && (
+                <div>
+                  <label className="block text-[11px] font-bold text-muted uppercase mb-2">Kunci Jawaban Singkat</label>
+                  <input required value={form.jawaban} onChange={e => setForm({...form, jawaban: e.target.value})} placeholder="Tuliskan jawaban persis" className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                </div>
+              )}
               <div><label className="block text-[11px] font-bold text-muted uppercase mb-2">Pembahasan</label><textarea required value={form.pembahasan} onChange={e => setForm({...form, pembahasan: e.target.value})} className="w-full bg-surface border-2 border-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-primary min-h-[80px]" /></div>
               <div className="pt-4 flex gap-3 sticky bottom-0 bg-surface py-4 border-t-2 border-border">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-lg border-2 border-border text-text font-bold text-[13px] hover:bg-surface-hover cursor-pointer bg-transparent">Batal</button>
